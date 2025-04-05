@@ -13,8 +13,9 @@ export const createContactSchema = Joi.object({
     phone: Joi.string().required().messages({
         'string.empty': `"phone" is required`,
         'any.required': `"phone" is required`
-    })
-})
+    }),
+    favorite: Joi.boolean()
+});
 
 export const updateContactSchema = Joi.object({
     name: Joi.string().messages({
@@ -26,7 +27,14 @@ export const updateContactSchema = Joi.object({
     }),
     phone: Joi.string().messages({
         'string.empty': `"phone" cannot be an empty string`
-    })
+    }),
+    favorite: Joi.boolean()
 }).min(1).messages({
     'object.min': 'Body must have at least one field'
+});
+
+export const updateStatusSchema = Joi.object({
+    favorite: Joi.boolean().required().messages({
+        'any.required': `"favorite" is required`
+    })
 });

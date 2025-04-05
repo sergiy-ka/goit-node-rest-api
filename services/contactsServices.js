@@ -1,88 +1,86 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { nanoid } from "nanoid";
+import Contact from '../models/contact.js';
 
-const contactsPath = path.resolve("db", "contacts.json");
-
-async function listContacts() {
+export async function listContacts() {
     try {
-        const data = await fs.readFile(contactsPath, "utf-8");
-        return JSON.parse(data);
+        const contacts = await Contact.findAll();
+        return contacts;
     } catch (error) {
-        console.error("Error reading contacts:", error.message);
-        return [];
+        console.error('Error reading contacts:', error.message);
+        throw error;
     }
 }
 
-async function getContactById(contactId) {
+export async function getContactById(contactId) {
     try {
-        const contacts = await listContacts();
-        const contact = contacts.find((item) => item.id === contactId);
-        return contact || null;
+        const contact = await Contact.findByPk(contactId);
+        return contact;
     } catch (error) {
-        console.error("Error getting contact by ID:", error.message);
-        return null;
+        console.error('Error getting contact by ID:', error.message);
+        throw error;
     }
 }
 
-async function removeContact(contactId) {
+export async function removeContact(contactId) {
     try {
-        const contacts = await listContacts();
-        const contactIndex = contacts.findIndex((item) => item.id === contactId);
+        const contact = await Contact.findByPk(contactId);
 
-        if (contactIndex === -1) {
+        if (!contact) {
             return null;
         }
 
-        const [removedContact] = contacts.splice(contactIndex, 1);
-        await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-
-        return removedContact;
+        await contact.destroy();
+        return contact;
     } catch (error) {
-        console.error("Error removing contact:", error.message);
-        return null;
+        console.error('Error removing contact:', error.message);
+        throw error;
     }
 }
 
-async function addContact(name, email, phone) {
+export async function addContact(name, email, phone) {
     try {
-        const contacts = await listContacts();
-        const newContact = {
-            id: nanoid(),
+        const newContact = await Contact.create({
             name,
             email,
             phone,
-        };
-
-        contacts.push(newContact);
-        await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+        });
 
         return newContact;
     } catch (error) {
-        console.error("Error adding contact:", error.message);
-        return null;
+        console.error('Error adding contact:', error.message);
+        throw error;
     }
 }
 
-async function updateContact(contactId, data) {
+export async function updateContact(contactId, data) {
     try {
-        const contacts = await listContacts();
-        const contactIndex = contacts.findIndex((item) => item.id === contactId);
+        const contact = await Contact.findByPk(contactId);
 
-        if (contactIndex === -1) {
+        if (!contact) {
             return null;
         }
 
-        const updatedContact = { ...contacts[contactIndex], ...data };
-        contacts[contactIndex] = updatedContact;
+        await contact.update(data);
 
-        await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-
-        return updatedContact;
+        return contact;
     } catch (error) {
-        console.error("Error updating contact:", error.message);
-        return null;
+        console.error('Error updating contact:', error.message);
+        throw error;
     }
 }
 
-export { listContacts, getContactById, removeContact, addContact, updateContact };
+export async function updateContactStatus(contactId, { favorite }) {
+    try {
+        const contact = await Contact.findByPk(contactId);
+
+        if (!contact) {
+            return null;
+        }
+
+        await contact.update({ favorite });
+
+        return contact;
+    } catch (error) {
+        console.error('Error updating contact status:', error.message);
+        throw error;
+    }
+}
