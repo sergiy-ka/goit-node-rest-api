@@ -53,8 +53,22 @@ const updateContactCtrl = async (req, res) => {
     res.status(200).json(updatedContact);
 };
 
+const updateStatusContactCtrl = async (req, res) => {
+    const { contactId } = req.params;
+    const body = req.body;
+
+    const updatedContact = await contactsService.updateContactStatus(contactId, body);
+
+    if (!updatedContact) {
+        throw HttpError(404, "Not found");
+    }
+
+    res.status(200).json(updatedContact);
+};
+
 export const getAllContacts = ctrlWrapper(getAllContactsCtrl);
 export const getOneContact = ctrlWrapper(getOneContactCtrl);
 export const deleteContact = ctrlWrapper(deleteContactCtrl);
 export const createContact = ctrlWrapper(createContactCtrl);
 export const updateContact = ctrlWrapper(updateContactCtrl);
+export const updateStatusContact = ctrlWrapper(updateStatusContactCtrl);
