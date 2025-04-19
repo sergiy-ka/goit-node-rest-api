@@ -26,3 +26,7 @@ coverage/
 # Optional: output from build process
 dist/
 build/
+
+# Optional: temporary files
+/temp
+/temp/*

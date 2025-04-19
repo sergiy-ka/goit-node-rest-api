@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
 import dotenv from 'dotenv';
+import gravatar from 'gravatar';
 
 dotenv.config();
 
@@ -13,10 +14,13 @@ export const registerUser = async (email, password) => {
         return null;
     }
 
+    const avatarURL = gravatar.url(email, { s: '250', d: 'identicon' }, true);
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        avatarURL
     });
 
     return newUser;
