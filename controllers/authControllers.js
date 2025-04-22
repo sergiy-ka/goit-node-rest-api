@@ -1,6 +1,7 @@
 import * as authService from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
+import * as avatarServices from "../services/avatarServices.js";
 
 const registerCtrl = async (req, res) => {
     const { email, password } = req.body;
@@ -62,7 +63,30 @@ const getCurrentCtrl = async (req, res) => {
     });
 };
 
+const updateAvatarCtrl = async (req, res) => {
+    if (!req.file) {
+        throw HttpError(400, "Avatar file is required");
+    }
+
+    const { id } = req.user;
+    const { path: tempUploadPath } = req.file;
+
+    try {
+        const avatarURL = await avatarServices.updateAvatar(id, tempUploadPath);
+
+        await req.user.update({ avatarURL });
+
+        res.status(200).json({ avatarURL });
+    } catch (error) {
+        if (error.message.includes('Unsupported file type')) {
+            throw HttpError(400, error.message);
+        }
+        throw error;
+    }
+};
+
 export const register = ctrlWrapper(registerCtrl);
 export const login = ctrlWrapper(loginCtrl);
 export const logout = ctrlWrapper(logoutCtrl);
 export const getCurrent = ctrlWrapper(getCurrentCtrl);
+export const updateAvatar = ctrlWrapper(updateAvatarCtrl);
