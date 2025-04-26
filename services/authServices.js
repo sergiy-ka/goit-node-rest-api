@@ -8,7 +8,7 @@ dotenv.config();
 
 const { JWT_SECRET } = process.env;
 
-export const registerUser = async (email, password) => {
+export const registerUser = async (email, password, verificationToken) => {
     const user = await User.findOne({ where: { email } });
     if (user) {
         return null;
@@ -20,7 +20,8 @@ export const registerUser = async (email, password) => {
     const newUser = await User.create({
         email,
         password: hashedPassword,
-        avatarURL
+        avatarURL,
+        verificationToken
     });
 
     return newUser;

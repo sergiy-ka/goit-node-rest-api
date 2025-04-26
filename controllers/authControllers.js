@@ -2,13 +2,25 @@ import * as authService from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import * as avatarServices from "../services/avatarServices.js";
+import * as emailService from "../services/emailService.js";
+import { v4 as uuidv4 } from 'uuid';
+import User from "../models/user.js";
 
 const registerCtrl = async (req, res) => {
     const { email, password } = req.body;
 
-    const user = await authService.registerUser(email, password);
+    const verificationToken = uuidv4();
+
+    const user = await authService.registerUser(email, password, verificationToken);
     if (!user) {
         throw HttpError(409, "Email in use");
+    }
+
+    try {
+        await emailService.sendVerificationEmail(email, verificationToken);
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        // Continue with registration even if email sending fails
     }
 
     res.status(201).json({
@@ -28,6 +40,10 @@ const loginCtrl = async (req, res) => {
     }
 
     const { user, token } = result;
+
+    if (!user.verify) {
+        throw HttpError(401, "Email not verified");
+    }
 
     res.status(200).json({
         token,
@@ -85,8 +101,56 @@ const updateAvatarCtrl = async (req, res) => {
     }
 };
 
+const verifyEmailCtrl = async (req, res) => {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOne({ where: { verificationToken } });
+
+    if (!user) {
+        throw HttpError(404, "User not found");
+    }
+
+    await user.update({ verify: true, verificationToken: null });
+
+    res.status(200).json({
+        message: "Verification successful"
+    });
+};
+
+const resendVerificationEmailCtrl = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        throw HttpError(400, "missing required field email");
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+        throw HttpError(404, "User not found");
+    }
+
+    if (user.verify) {
+        throw HttpError(400, "Verification has already been passed");
+    }
+
+    const verificationToken = uuidv4();
+    await user.update({ verificationToken });
+
+    try {
+        await emailService.sendVerificationEmail(email, verificationToken);
+        res.status(200).json({
+            message: "Verification email sent"
+        });
+    } catch (error) {
+        throw HttpError(500, "Error sending email");
+    }
+};
+
 export const register = ctrlWrapper(registerCtrl);
 export const login = ctrlWrapper(loginCtrl);
 export const logout = ctrlWrapper(logoutCtrl);
 export const getCurrent = ctrlWrapper(getCurrentCtrl);
 export const updateAvatar = ctrlWrapper(updateAvatarCtrl);
+export const verifyEmail = ctrlWrapper(verifyEmailCtrl);
+export const resendVerificationEmail = ctrlWrapper(resendVerificationEmailCtrl);
