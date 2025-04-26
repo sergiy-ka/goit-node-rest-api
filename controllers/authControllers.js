@@ -20,7 +20,6 @@ const registerCtrl = async (req, res) => {
         await emailService.sendVerificationEmail(email, verificationToken);
     } catch (error) {
         console.error('Error sending verification email:', error);
-        // Continue with registration even if email sending fails
     }
 
     res.status(201).json({
